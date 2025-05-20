@@ -1,0 +1,117 @@
+<div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+
+<%- contentFor("styles") %>
+
+<!-- Babylon.js -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+<script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+<script src="https://cdn.babylonjs.com/recast.js"></script>
+<script src="https://cdn.babylonjs.com/ammo.js"></script>
+<script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+<script src="https://cdn.babylonjs.com/cannon.js"></script>
+<script src="https://cdn.babylonjs.com/Oimo.js"></script>
+<script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+<script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+<script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+<script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+<script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+<script src="https://cdn.babylonjs.com/addons/babylonjs.addons.min.js"></script>
+<script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+<style type="text/css">
+	html, body {
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+		height: 100vh;
+		overflow: hidden;
+	}
+
+	#canvasZone {
+		position: relative;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100vh;
+	}
+
+	#renderCanvas {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		border: none;
+		outline: none;
+		user-select: none;
+		touch-action: none;
+	}
+
+</style>
+
+<%- contentFor("scripts") %>
+
+<script type="text/javascript">
+	"use strict";
+
+	let canvas = document.getElementById("renderCanvas");
+	let engine = null;
+	let scene = null;
+	let pessoa = null;
+
+	async function createScene() {
+		// https://doc.babylonjs.com/toolsAndResources/inspector
+		// https://doc.babylonjs.com/features/featuresDeepDive/importers/glTF
+		// https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/position
+		// https://playground.babylonjs.com/#WGZLGJ#11018
+
+		scene = new BABYLON.Scene(engine);
+		// Create a default skybox with an environment.
+		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", scene);
+		const currentSkybox = scene.createDefaultSkybox(hdrTexture, true);
+
+		let idsAdicionados = new Set();
+
+		await BABYLON.AppendSceneAsync("/public/glb/a1-com-peso.glb", scene);
+		let nodes = scene.getNodes();
+		for (let i = nodes.length - 1; i >= 0; i--) {
+			const node = nodes[i];
+			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
+				pessoa = node;
+				idsAdicionados.add(node.uniqueId);
+				break;
+			}
+		}
+
+		scene.createDefaultCameraOrLight(true, true, true);
+		const camera = scene.activeCamera;
+		camera.alpha = Math.PI / 2;
+	}
+
+	async function init() {
+		try {
+			engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, disableWebGL2Support: false});
+			await createScene();
+		} catch (ex) {
+			alert("Erro ao criar a engine: " + ex.message || ex.toString());
+		}
+
+		window.addEventListener("resize", function () {
+			engine.resize();
+		});
+
+		//scene.debugLayer.show();
+
+		engine.runRenderLoop(function () {
+			if (scene && scene.activeCamera) {
+				scene.render();
+			}
+		});
+	}
+
+	init();
+	
+</script>
