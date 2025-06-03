@@ -21,6 +21,7 @@
 <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 <script src="https://cdn.babylonjs.com/addons/babylonjs.addons.min.js"></script>
 <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+<script src="<%- staticRoot %>/lib/socket.io/socket.io.min.js"></script>
 
 <style type="text/css">
 	html, body {
@@ -59,24 +60,27 @@
 
 	let canvas = document.getElementById("renderCanvas");
 	let engine = null;
-	let scene = null;
+	let cena = null;
+	let xrHelper = null;
 	let pessoa = null;
+	let animacaoAtual = null;
+	let socket = null;
 
-	async function createScene() {
+	async function criarCena() {
 		// https://doc.babylonjs.com/toolsAndResources/inspector
 		// https://doc.babylonjs.com/features/featuresDeepDive/importers/glTF
 		// https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/position
 		// https://playground.babylonjs.com/#WGZLGJ#11018
 
-		scene = new BABYLON.Scene(engine);
+		cena = new BABYLON.Scene(engine);
 		// Create a default skybox with an environment.
-		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", scene);
-		const currentSkybox = scene.createDefaultSkybox(hdrTexture, true);
+		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
+		const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
 
 		let idsAdicionados = new Set();
 
-		await BABYLON.AppendSceneAsync("/public/glb/a1-com-peso.glb", scene);
-		let nodes = scene.getNodes();
+		await BABYLON.AppendSceneAsync("/public/glb/a1-com-peso.glb", cena);
+		let nodes = cena.getNodes();
 		for (let i = nodes.length - 1; i >= 0; i--) {
 			const node = nodes[i];
 			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
@@ -86,15 +90,50 @@
 			}
 		}
 
-		scene.createDefaultCameraOrLight(true, true, true);
-		const camera = scene.activeCamera;
+		cena.createDefaultCameraOrLight(true, true, true);
+		const camera = cena.activeCamera;
 		camera.alpha = Math.PI / 2;
+
+		xrHelper = await cena.createDefaultXRExperienceAsync();
+
+		// Listar todas as animações presentes no arquivo GLB
+		console.log("Animações disponíveis no arquivo GLB:");
+		for (let i = 0; i < cena.animationGroups.length; i++) {
+			const animation = cena.animationGroups[i];
+			console.log(animation.name);
+		}
+
+		if (cena.animationGroups.length)
+			reproduzirAnimacao("");
 	}
 
-	async function init() {
+	function reproduzirAnimacao(nome, loop = true, velocidade = 1.0) {
+		if (!cena)
+			return;
+
+		// Para todas as animações em execução antes de iniciar a nova
+		cena.animationGroups.forEach(animation => {
+			animation.stop();
+		});
+
+		if (!nome)
+			return;
+
+		// Encontra e reproduz a animação desejada
+		animacaoAtual = cena.animationGroups.find(anim => anim.name === nome);
+		if (animacaoAtual) {
+			animacaoAtual.start(loop, velocidade);
+			console.log(`Reproduzindo animação: ${nome} com velocidade ${velocidade}`);
+		} else {
+			console.warn(`Animação não encontrada: ${nome}`);
+		}
+	}
+
+	async function inicializar() {
 		try {
 			engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, disableWebGL2Support: false});
-			await createScene();
+			await criarCena();
+			inicializarSocket();
 		} catch (ex) {
 			alert("Erro ao criar a engine: " + ex.message || ex.toString());
 		}
@@ -106,12 +145,35 @@
 		//scene.debugLayer.show();
 
 		engine.runRenderLoop(function () {
-			if (scene && scene.activeCamera) {
-				scene.render();
+			if (cena && cena.activeCamera) {
+				cena.render();
 			}
 		});
 	}
 
-	init();
-	
+	function inicializarSocket() {
+		// Inicializa a conexão com o servidor Socket.IO
+		socket = io();
+
+		// Evento disparado quando a conexão é estabelecida
+		socket.on("connect", () => {
+			console.log("Conectado ao servidor");
+		});
+
+		// Evento disparado quando a conexão é perdida
+		socket.on("disconnect", () => {
+			console.log("Desconectado do servidor");
+		});
+
+		// Evento para receber comandos de mudança de animação
+		socket.on("reproduzirAnimacao", (dados) => {
+			if (dados && dados.nome) {
+				console.log("Recebido comando para mudar animação: ", dados.nome);
+				reproduzirAnimacao(dados.nome, true, dados.velocidade / 100);
+			}
+		});
+	}
+
+	inicializar();
+
 </script>

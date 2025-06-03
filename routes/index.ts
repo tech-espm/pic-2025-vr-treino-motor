@@ -70,15 +70,23 @@ class IndexRoute {
 		res.redirect(app.root + "/");
 	}
 
-	public static async treino(req: app.Request, res: app.Response) {
+	public static async controleTreino(req: app.Request, res: app.Response) {
 		let u = await Usuario.cookie(req);
 		if (!u)
 			res.redirect(app.root + "/login");
 		else
-			res.render("index/treino", {
-				layout: "layout-fullscreen",
-				titulo: "Treino"
+			res.render("index/controle-treino", {
+				layout: "layout-sem-form",
+				titulo: "Controle de Treino",
+				usuario: u
 			});
+	}
+
+	public static async treino(req: app.Request, res: app.Response) {
+		res.render("index/treino", {
+			layout: "layout-fullscreen",
+			titulo: "Treino"
+		});
 	}
 }
 

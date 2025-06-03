@@ -1,0 +1,63 @@
+<div class="alert alert-secondary text-center" id="statusConexao">
+	Conectando ao servidor...
+</div>
+
+<div class="row">
+	<div class="col-md-6 offset-md-3">
+		<div class="card shadow">
+			<div class="card-body">
+				<div class="form-group">
+					<label for="animacaoAtual">Animação Atual</label>
+					<select class="form-control" id="animacaoAtual">
+						<option value="">Nenhuma animação</option>
+						<option>Biceps (Rep)</option>
+						<option>Ombro (Rep)</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="velocidade">Velocidade <small id="velocidadeAtual">100%</small></label>
+					<input type="range" class="form-control" id="velocidade" min="20" max="200" value="100" oninput="document.getElementById('velocidadeAtual').textContent = this.value + '%'" />
+				</div>
+				<div class="text-center">
+					<button class="btn btn-primary" onclick="reproduzirAnimacao()">Reproduzir</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<%- contentFor("styles") %>
+
+<script src="<%- staticRoot %>/lib/socket.io/socket.io.min.js"></script>
+
+<%- contentFor("scripts") %>
+
+<script type="text/javascript">
+	"use strict";
+
+	let socket = null;
+
+	function inicializarSocket() {
+		// Inicializa a conexão com o servidor Socket.IO
+		socket = io();
+
+		// Evento disparado quando a conexão é estabelecida
+		socket.on("connect", () => {
+			document.getElementById("statusConexao").innerHTML = "Conectado ao servidor";
+		});
+
+		// Evento disparado quando a conexão é perdida
+		socket.on("disconnect", () => {
+			document.getElementById("statusConexao").innerHTML = "Desconectado do servidor";
+		});
+	}
+
+	function reproduzirAnimacao() {
+		socket.emit("reproduzirAnimacao", {
+			nome: document.getElementById("animacaoAtual").value,
+			velocidade: parseInt(document.getElementById("velocidade").value),
+		});
+	}
+
+	inicializarSocket();
+</script>
