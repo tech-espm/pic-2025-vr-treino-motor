@@ -167,7 +167,7 @@
 
 		// Evento para receber comandos de mudança de animação
 		socket.on("reproduzirAnimacao", (dados) => {
-			if (dados && dados.nome) {
+			if (dados) {
 				console.log("Recebido comando para mudar animação: ", dados.nome);
 				reproduzirAnimacao(dados.nome, true, dados.velocidade / 100);
 			}
