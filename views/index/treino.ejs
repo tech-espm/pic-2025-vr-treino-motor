@@ -63,6 +63,7 @@
 	let cena = null;
 	let xrHelper = null;
 	let pessoa = null;
+	let cenario = null;
 	let animacaoAtual = null;
 	let socket = null;
 
@@ -90,7 +91,19 @@
 			}
 		}
 
-		cena.createDefaultCameraOrLight(true, true, true);
+		await BABYLON.AppendSceneAsync("/public/glb/c1.glb", cena);
+		nodes = cena.getNodes();
+		for (let i = nodes.length - 1; i >= 0; i--) {
+			const node = nodes[i];
+			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
+				cenario = node;
+				idsAdicionados.add(node.uniqueId);
+				break;
+			}
+		}
+
+		//cena.createDefaultCameraOrLight(true, true, true);
+		cena.createDefaultCamera(true, true, true);
 		const camera = cena.activeCamera;
 		camera.alpha = Math.PI / 2;
 
