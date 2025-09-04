@@ -75,8 +75,8 @@
 
 		cena = new BABYLON.Scene(engine);
 		// Create a default skybox with an environment.
-		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
-		const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
+		//const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
+		//const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
 
 		let idsAdicionados = new Set();
 
@@ -155,7 +155,7 @@
 			engine.resize();
 		});
 
-		//scene.debugLayer.show();
+		cena.debugLayer.show();
 
 		engine.runRenderLoop(function () {
 			if (cena && cena.activeCamera) {
