@@ -75,8 +75,8 @@
 
 		cena = new BABYLON.Scene(engine);
 		// Create a default skybox with an environment.
-		//const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
-		//const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
+		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
+		const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
 
 		let idsAdicionados = new Set();
 
@@ -91,7 +91,7 @@
 			}
 		}
 
-		await BABYLON.AppendSceneAsync("/public/glb/c1.glb", cena);
+		await BABYLON.AppendSceneAsync("/public/glb/c2.glb", cena);
 		nodes = cena.getNodes();
 		for (let i = nodes.length - 1; i >= 0; i--) {
 			const node = nodes[i];
@@ -105,9 +105,18 @@
 		//cena.createDefaultCameraOrLight(true, true, true);
 		cena.createDefaultCamera(true, true, true);
 		const camera = cena.activeCamera;
-		camera.alpha = -1.2876582683110294;
-		camera.beta = 1.5291414891761324;
-		camera.radius = 33.7141;
+		// Academia
+		//camera.alpha = -1.2876582683110294;
+		//camera.beta = 1.5291414891761324;
+		//camera.radius = 33.7141;
+		//
+		// Montanha
+		cena.activeCamera.target.x = 0;
+		cena.activeCamera.target.y = 8;
+		cena.activeCamera.target.z = 0;
+		cena.activeCamera.alpha = 5.19630344914642;
+		cena.activeCamera.beta = 1.3035409552252681;
+		cena.activeCamera.radius = 29.623088971524524;
 
 		xrHelper = await cena.createDefaultXRExperienceAsync();
 
