@@ -22,9 +22,16 @@ app.run({
 
 			// Recebe mensagem de mudança de animação e repassa para todos os clientes
 			socket.on("reproduzirAnimacao", (dados: any) => {
-				console.log("Recebido comando para mudar animação:", dados);
+				console.log("Recebido comando para alterar animação:", dados);
 				// Repassa a mensagem para todos os clientes conectados
 				io.emit("reproduzirAnimacao", dados);
+			});
+
+			// Recebe mensagem de mudança de fundo e repassa para todos os clientes
+			socket.on("alterarFundo", (dados: any) => {
+				console.log("Recebido comando para alterar fundo:", dados);
+				// Repassa a mensagem para todos os clientes conectados
+				io.emit("alterarFundo", dados);
 			});
 
 			socket.on("disconnect", () => {

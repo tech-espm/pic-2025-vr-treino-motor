@@ -63,9 +63,45 @@
 	let cena = null;
 	let xrHelper = null;
 	let pessoa = null;
-	let cenario = null;
+	let cubo = null;
+	let cenarios = [];
 	let animacaoAtual = null;
 	let socket = null;
+
+	function alterarFundo(fundo) {
+		if (!cena)
+			return;
+
+		const camera = cena.activeCamera;
+
+		cenarios.forEach(cenario => {
+			cenario.setEnabled(false);
+		});
+
+		switch (fundo) {
+			case 2:
+				// Montanha
+				cenarios[1].setEnabled(true);
+				camera.target.x = 0;
+				camera.target.y = 8;
+				camera.target.z = -18;
+				camera.alpha = 4.78947802534579;
+				camera.beta = 1.64111236477935;
+				camera.radius = 10.216526823238025;
+				break;
+
+			default:
+				// Academia
+				cenarios[0].setEnabled(true);
+				camera.target.x = 0;
+				camera.target.y = 8;
+				camera.target.z = -18;
+				camera.alpha = 4.771078000931726;
+				camera.beta = 1.321912375460505;
+				camera.radius = 8.193611611048821;
+				break;
+		}
+	}
 
 	async function criarCena() {
 		// https://doc.babylonjs.com/toolsAndResources/inspector
@@ -75,17 +111,36 @@
 
 		cena = new BABYLON.Scene(engine);
 		// Create a default skybox with an environment.
-		const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
-		const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
+		//const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("/public/glb/environment.dds", cena);
+		//const currentSkybox = cena.createDefaultSkybox(hdrTexture, true);
 
 		let idsAdicionados = new Set();
 
-		await BABYLON.AppendSceneAsync("/public/glb/a1-com-peso.glb", cena);
+		await BABYLON.AppendSceneAsync("/public/glb/an.glb", cena);
 		let nodes = cena.getNodes();
 		for (let i = nodes.length - 1; i >= 0; i--) {
 			const node = nodes[i];
 			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
 				pessoa = node;
+				const children = pessoa.getChildren();
+				for (let j = 0; j < children.length; j++) {
+					const child = children[j];
+					if (child.id == "Cube") {
+						cubo = child;
+						break;
+					}
+				}
+				idsAdicionados.add(node.uniqueId);
+				break;
+			}
+		}
+
+		await BABYLON.AppendSceneAsync("/public/glb/c1.glb", cena);
+		nodes = cena.getNodes();
+		for (let i = nodes.length - 1; i >= 0; i--) {
+			const node = nodes[i];
+			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
+				cenarios.push(node);
 				idsAdicionados.add(node.uniqueId);
 				break;
 			}
@@ -96,27 +151,20 @@
 		for (let i = nodes.length - 1; i >= 0; i--) {
 			const node = nodes[i];
 			if (node.id == "__root__" && !idsAdicionados.has(node.uniqueId)) {
-				cenario = node;
+				cenarios.push(node);
 				idsAdicionados.add(node.uniqueId);
 				break;
 			}
 		}
 
-		//cena.createDefaultCameraOrLight(true, true, true);
-		cena.createDefaultCamera(true, true, true);
-		const camera = cena.activeCamera;
-		// Academia
-		//camera.alpha = -1.2876582683110294;
-		//camera.beta = 1.5291414891761324;
-		//camera.radius = 33.7141;
-		//
-		// Montanha
-		cena.activeCamera.target.x = 0;
-		cena.activeCamera.target.y = 8;
-		cena.activeCamera.target.z = 0;
-		cena.activeCamera.alpha = 5.19630344914642;
-		cena.activeCamera.beta = 1.3035409552252681;
-		cena.activeCamera.radius = 29.623088971524524;
+		cena.createDefaultCameraOrLight(true, true, true);
+		//cena.createDefaultCamera(true, true, true);
+
+		alterarFundo(1);
+
+		cena.lights[0].direction.x = 0;
+		cena.lights[0].direction.y = 0.7;
+		cena.lights[0].direction.z = -0.7;
 
 		xrHelper = await cena.createDefaultXRExperienceAsync();
 
@@ -128,12 +176,25 @@
 		}
 
 		if (cena.animationGroups.length)
-			reproduzirAnimacao("");
+			reproduzirAnimacao("Base");
 	}
 
 	function reproduzirAnimacao(nome, loop = true, velocidade = 1.0) {
 		if (!cena)
 			return;
+
+		if (cubo) {
+			switch (parseInt(nome)) {
+				case 1:
+				case 2:
+				case 3:
+					cubo.setEnabled(true);
+					break;
+				default:
+					cubo.setEnabled(false);
+					break;
+			}
+		}
 
 		// Para todas as animações em execução antes de iniciar a nova
 		cena.animationGroups.forEach(animation => {
@@ -147,6 +208,13 @@
 		animacaoAtual = cena.animationGroups.find(anim => anim.name === nome);
 		if (animacaoAtual) {
 			animacaoAtual.start(loop, velocidade);
+			animacaoAtual.targetedAnimations.forEach(targetedAnimation => {
+				if (targetedAnimation.target === cubo) {
+					cena.stopAnimation(cubo, targetedAnimation.animation.name);
+				}
+			});
+			cubo.position.x = (nome === "2.L" ? -5 : 3.564);
+			cubo.position.y = 5.4;
 			console.log(`Reproduzindo animação: ${nome} com velocidade ${velocidade}`);
 		} else {
 			console.warn(`Animação não encontrada: ${nome}`);
@@ -166,7 +234,8 @@
 			engine.resize();
 		});
 
-		cena.debugLayer.show();
+		if (location.search.includes("debug"))
+			cena.debugLayer.show();
 
 		engine.runRenderLoop(function () {
 			if (cena && cena.activeCamera) {
@@ -189,11 +258,19 @@
 			console.log("Desconectado do servidor");
 		});
 
-		// Evento para receber comandos de mudança de animação
+		// Evento para receber comandos de alteração de animação
 		socket.on("reproduzirAnimacao", (dados) => {
 			if (dados) {
 				console.log("Recebido comando para mudar animação: ", dados.nome);
 				reproduzirAnimacao(dados.nome, true, dados.velocidade / 100);
+			}
+		});
+
+		// Evento para receber comandos de alteração de fundo
+		socket.on("alterarFundo", (dados) => {
+			if (dados) {
+				console.log("Recebido comando para alterar fundo: ", dados.fundo);
+				alterarFundo(parseInt(dados.fundo));
 			}
 		});
 	}

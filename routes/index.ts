@@ -7,9 +7,9 @@ class IndexRoute {
 		if (!u)
 			res.redirect(app.root + "/login");
 		else
-			res.render("index/index", {
+			res.render("index/controle-treino", {
 				layout: "layout-sem-form",
-				titulo: "Dashboard",
+				titulo: "Controle de Treino",
 				usuario: u
 			});
 	}
